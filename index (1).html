@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5d8a"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
+<title>Lector</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f4ef;--card:#fff;--ink:#1f2933;--mute:#6b7785;--acc:#2f5d8a;--acc-ink:#fff;--line:#e3dfd6;--hl:#fde9a8;--hlink:#1f2933;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181d;--card:#1d232a;--ink:#e8ebee;--mute:#97a3b0;--acc:#6aa3d8;--acc-ink:#0d1620;--line:#2c343d;--hl:#4a4020;--hlink:#f4efe0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14181d;--card:#1d232a;--ink:#e8ebee;--mute:#97a3b0;--acc:#6aa3d8;--acc-ink:#0d1620;--line:#2c343d;--hl:#4a4020;--hlink:#f4efe0;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:20px;margin:0;flex:1;letter-spacing:.3px}
+button,select,textarea{font:inherit;color:inherit}
+.ib{background:none;border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+.pri{background:var(--acc);color:var(--acc-ink);border:0;border-radius:12px;padding:12px 18px;font-weight:600;cursor:pointer;width:100%}
+.sec{background:var(--card);color:var(--acc);border:1.5px solid var(--acc);border-radius:12px;padding:12px 18px;font-weight:600;cursor:pointer;width:100%;text-align:center;display:block}
+main{flex:1;overflow-y:auto;padding:16px;max-width:760px;width:100%;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--mute);margin:18px 0 8px}
+textarea{width:100%;min-height:130px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);resize:vertical;margin-bottom:10px}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
+.item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}.up{position:relative;overflow:hidden}.up input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.item b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .m{flex:1;min-width:0;cursor:pointer}.item small{color:var(--mute)}
+.x{background:none;border:0;color:var(--mute);font-size:20px;padding:4px 8px;cursor:pointer}
+#reader{display:flex;flex-direction:column;flex:1;min-height:0}
+#reader[hidden],#home[hidden],#sheet[hidden]{display:none}
+#home{flex:1;overflow-y:auto}
+#text{flex:1;overflow-y:auto;padding:18px 18px 24px;max-width:760px;width:100%;margin:0 auto;font-family:Georgia,"Times New Roman",serif;line-height:1.75}
+#text p{margin:0 0 1em}#text span{cursor:pointer;border-radius:4px;padding:1px 0}
+#text span.on{background:var(--hl);color:var(--hlink)}
+#bar{height:3px;background:var(--line)}#bar i{display:block;height:100%;background:var(--acc);width:0}
+#ctl{display:flex;justify-content:center;align-items:center;gap:14px;padding:10px 16px 12px;background:var(--card);border-top:1px solid var(--line)}
+#ctl button{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:20px;cursor:pointer;color:var(--ink)}
+#ctl #pp{width:68px;height:68px;background:var(--acc);color:var(--acc-ink);border:0;font-size:26px}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;z-index:9}
+#sheet>div{background:var(--card);width:100%;max-width:760px;margin:0 auto;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px))}
+#sheet label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
+#sheet select,#sheet input[type=range]{width:100%}
+#sheet select{padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+#busy{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;z-index:10;font-size:14px}
+#busy:empty{display:none}.tip{color:var(--mute);font-size:13px;margin-top:6px}
+</style></head><body>
+<header><button class="ib" id="back" hidden>←</button><h1>Lector</h1><button class="ib" id="inst" hidden data-i="inst"></button><button class="ib" id="lg">ES</button><button class="ib" id="gear" aria-label="Settings">⚙</button></header>
+<section id="home"><main>
+<h2 data-i="write"></h2>
+<div class="card"><textarea id="ta" data-p="ph"></textarea>
+<button class="pri" id="go" data-i="read"></button></div>
+<label class="sec up"><span data-i="open"></span><input id="file" type="file"></label><label class="sec up" style="margin-top:10px"><span data-i="cam"></span><input id="cam" type="file" accept="image/*" capture="environment"></label>
+<h2 data-i="lib"></h2><div class="card" id="lib"></div>
+<p class="tip" data-i="tip"></p></main></section>
+<section id="reader" hidden><div id="bar"><i></i></div><div id="text"></div>
+<div id="ctl"><button id="pv" aria-label="Previous">⏮</button><button id="pp" aria-label="Play">▶</button><button id="nx" aria-label="Next">⏭</button></div></section>
+<div id="sheet" hidden><div>
+<h2 data-i="set" style="margin-top:0"></h2>
+<label data-i="vEn"></label><select id="ven"></select>
+<label data-i="vEs"></label><select id="ves"></select>
+<label><span data-i="spd"></span>: <b id="rv"></b></label><input type="range" id="rate" min="0.6" max="2" step="0.1">
+<label><span data-i="sz"></span>: <b id="sv"></b></label><input type="range" id="size" min="15" max="30" step="1">
+<p class="tip" id="vst"></p><div class="row" style="margin-top:12px"><button class="sec" id="test" data-i="test"></button><button class="pri" id="close" data-i="done"></button></div></div></div>
+<div id="busy"></div>
+<script>
+const T={en:{write:"Paste or write",ph:"Paste or type text here…",read:"Read aloud",open:"Open file (PDF, Word, TXT, photo)",lib:"Library",empty:"Nothing saved yet.",set:"Settings",vEn:"English voice",vEs:"Spanish voice",spd:"Speed",sz:"Text size",done:"Done",verr:"The voice could not play. Open Settings and tap Test voice, or pick another voice.",inst:"Install",cam:"Take a photo of a page",test:"Test voice",vn:"voices found",vhelp:"No voices found. Open this page directly in Chrome (not inside another app) and make sure Google Speech Services is installed in Android settings.",auto:"Automatic",load:"Reading file…",err:"Couldn’t read that file.",scan:"No text found. For a scan, upload it as a photo to try text recognition.",ocr:"Recognizing text…",novoice:"No voices on this device",off:"offline",on:"online",tip:"For listening with the screen off: add this page to your home screen, keep the volume up, and start playback before locking.",untitled:"Pasted text",del:"Delete?"},
+es:{write:"Pegar o escribir",ph:"Pega o escribe el texto aquí…",read:"Leer en voz alta",open:"Abrir archivo (PDF, Word, TXT, foto)",lib:"Biblioteca",empty:"Aún no hay nada guardado.",set:"Ajustes",vEn:"Voz en inglés",vEs:"Voz en español",spd:"Velocidad",sz:"Tamaño del texto",done:"Listo",verr:"No se pudo reproducir la voz. Abre Ajustes y toca Probar voz, o elige otra voz.",inst:"Instalar",cam:"Tomar foto de una página",test:"Probar voz",vn:"voces encontradas",vhelp:"No hay voces. Abre esta página directamente en Chrome (no dentro de otra app) y verifica que Google Speech Services esté instalado en los ajustes de Android.",auto:"Automática",load:"Leyendo archivo…",err:"No se pudo leer ese archivo.",scan:"No se encontró texto. Si es un escaneo, súbelo como foto para reconocer el texto.",ocr:"Reconociendo texto…",novoice:"No hay voces en este dispositivo",off:"sin conexión",on:"en línea",tip:"Para escuchar con la pantalla apagada: añade esta página a tu pantalla de inicio, sube el volumen e inicia la lectura antes de bloquear.",untitled:"Texto pegado",del:"¿Eliminar?"}};
+const $=s=>document.querySelector(s);
+function load(k,d){try{const v=localStorage.getItem('lt:'+k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem('lt:'+k,JSON.stringify(v))}catch(e){}}
+const S={lib:load('lib',[]),set:Object.assign({rate:1,size:19,ven:'',ves:''},load('set',{})),cur:null,sents:[],i:0,playing:false,gen:0,lang:'en',ui:load('ui',(navigator.language||'').slice(0,2)==='es'?'es':'en')};
+const t=k=>T[S.ui][k];
+function i18n(){document.documentElement.lang=S.ui;document.querySelectorAll('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));document.querySelectorAll('[data-p]').forEach(e=>e.placeholder=t(e.dataset.p));$('#lg').textContent=S.ui==='en'?'ES':'EN';fillVoices();renderLib()}
+function busy(m){$('#busy').textContent=m||''}
+const ldc={};function ld(src){return ldc[src]||(ldc[src]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>{delete ldc[src];no(new Error('net'))};document.head.appendChild(s)}))}
+function split(txt){const out=[];txt.replace(/\r/g,'').split(/\n+/).forEach((p,pi)=>{p=p.trim();if(!p)return;const m=p.match(/[^.!?…]+[.!?…]+["”’)\]]*|[^.!?…]+$/g)||[p];m.forEach(s=>{s=s.trim();while(s.length>220){let k=s.lastIndexOf(',',220);if(k<60)k=s.lastIndexOf(' ',220);if(k<1)k=220;out.push({t:s.slice(0,k+1).trim(),p:pi});s=s.slice(k+1).trim()}if(s)out.push({t:s,p:pi})})});return out}
+function detect(x){const w=x.toLowerCase().slice(0,3000).match(/[a-záéíóúñü]+/g)||[];const E=new Set('the and of to is in that for with you it was on are as this be have from or by not but they his her at we an which their has will would there been'.split(' ')),P=new Set('el la de que y en los las un una con por para es se lo del al su como más pero sus le ya este esta entre cuando muy sin sobre también me hasta hay donde desde todo nos todos uno les ni ese eso ante esto antes qué otro otra tanto frase'.split(' '));let e=0,s=0;w.forEach(a=>{if(E.has(a))e++;if(P.has(a))s++});s+=((x.slice(0,3000).match(/[áéíóúñ¿¡]/gi)||[]).length)*2;return s>e?'es':s<e?'en':S.ui}
+/* voices */
+let voices=[];
+function fillVoices(){voices=window.speechSynthesis?speechSynthesis.getVoices():[];['en','es'].forEach(l=>{const sel=$('#v'+l);const list=voices.filter(v=>v.lang.toLowerCase().startsWith(l));if(!list.length){sel.innerHTML='<option value="">'+t('novoice')+'</option>';return}sel.innerHTML='<option value="">'+t('auto')+'</option>'+list.map(v=>'<option value="'+v.voiceURI.replace(/"/g,'&quot;')+'">'+v.name+' · '+(v.localService?t('off'):t('on'))+'</option>').join('');sel.value=S.set['v'+l]||''});$('#vst').textContent=voices.length?voices.length+' '+t('vn'):t('vhelp')}
+function pick(l){const list=voices.filter(v=>v.lang.toLowerCase().startsWith(l));return list.find(v=>v.voiceURI===S.set['v'+l])||list.find(v=>v.default)||list[0]}
+if(window.speechSynthesis){speechSynthesis.onvoiceschanged=fillVoices;let n=0;const iv=setInterval(()=>{fillVoices();if(voices.length||++n>20)clearInterval(iv)},500)}
+/* keep-alive silent audio so playback survives screen lock */
+let keep;function mkKeep(){if(keep)return;try{const n=8000,b=new Uint8Array(44+n),d=new DataView(b.buffer);const w=(o,s)=>[...s].forEach((c,i)=>b[o+i]=c.charCodeAt(0));w(0,'RIFF');d.setUint32(4,36+n,true);w(8,'WAVEfmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);d.setUint32(24,8000,true);d.setUint32(28,8000,true);d.setUint16(32,1,true);d.setUint16(34,8,true);w(36,'data');d.setUint32(40,n,true);b.fill(128,44);keep=new Audio(URL.createObjectURL(new Blob([b],{type:'audio/wav'})));keep.loop=true}catch(e){}}
+function ms(){if(!('mediaSession' in navigator))return;try{const m=navigator.mediaSession;m.metadata=new MediaMetadata({title:S.cur.title,artist:'Lector'});m.setActionHandler('play',play);m.setActionHandler('pause',pause);m.setActionHandler('nexttrack',()=>jump(1));m.setActionHandler('previoustrack',()=>jump(-1));m.playbackState=S.playing?'playing':'paused'}catch(e){}}
+/* reader */
+function render(){const box=$('#text');box.innerHTML='';let last=-1,p;S.sents.forEach((s,i)=>{if(s.p!==last){p=document.createElement('p');box.appendChild(p);last=s.p}const sp=document.createElement('span');sp.textContent=s.t+' ';sp.dataset.i=i;p.appendChild(sp)})}
+function mark(){const o=$('#text .on');if(o)o.classList.remove('on');const e=$('#text span[data-i="'+S.i+'"]');if(e){e.classList.add('on');e.scrollIntoView({block:'center',behavior:'smooth'})}$('#bar i').style.width=(S.sents.length?(S.i+1)/S.sents.length*100:0)+'%'}
+function persist(){if(S.cur){S.cur.pos=S.i;save('lib',S.lib)}}
+function ui(){$('#pp').textContent=S.playing?'⏸':'▶';if('mediaSession' in navigator)try{navigator.mediaSession.playbackState=S.playing?'playing':'paused'}catch(e){}}
+function speak(){const g=++S.gen;speechSynthesis.cancel();const s=S.sents[S.i];if(!s){pause();return}mark();const u=new SpeechSynthesisUtterance(s.t),v=pick(S.lang);if(v)u.voice=v;u.lang=v?v.lang:(S.lang==='es'?'es-ES':'en-US');u.rate=+S.set.rate;
+u.onend=()=>{if(g!==S.gen)return;if(S.i>=S.sents.length-1){S.playing=false;S.i=0;persist();mark();ui();if(keep)keep.pause();return}S.i++;persist();speak()};
+u.onerror=e=>{if(g!==S.gen||e.error==='interrupted'||e.error==='canceled')return;pause();busy(t('verr'));setTimeout(()=>busy(''),7000)};
+setTimeout(()=>{if(g===S.gen)speechSynthesis.speak(u)},60)}
+function play(){if(!window.speechSynthesis||!S.cur)return;mkKeep();if(keep)keep.play().catch(()=>{});S.playing=true;ui();ms();speak()}
+function pause(){S.playing=false;S.gen++;if(window.speechSynthesis)speechSynthesis.cancel();if(keep)keep.pause();persist();ui()}
+function jump(d){S.i=Math.max(0,Math.min(S.sents.length-1,S.i+d));if(S.playing)speak();else{mark();persist()}}
+function openDoc(it){S.cur=it;S.sents=split(it.text);S.lang=detect(it.text);S.i=Math.min(it.pos||0,Math.max(0,S.sents.length-1));render();$('#home').hidden=true;$('#reader').hidden=false;$('#back').hidden=false;$('#text').style.fontSize=S.set.size+'px';mark();ui()}
+function closeDoc(){pause();$('#reader').hidden=true;$('#home').hidden=false;$('#back').hidden=true;renderLib()}
+function addDoc(title,text){const it={id:Date.now(),title:title,text:text,pos:0};S.lib.unshift(it);save('lib',S.lib);openDoc(it)}
+function renderLib(){const b=$('#lib');if(!S.lib.length){b.innerHTML='<small style="color:var(--mute)">'+t('empty')+'</small>';return}b.innerHTML='';S.lib.forEach(it=>{const d=document.createElement('div');d.className='item';const m=document.createElement('div');m.className='m';const n=S.lib.length?split(it.text).length:1;m.innerHTML='<b></b><small></small>';m.firstChild.textContent=it.title;m.lastChild.textContent=Math.round((it.pos||0)/Math.max(1,n)*100)+'%';m.onclick=()=>openDoc(it);const x=document.createElement('button');x.className='x';x.textContent='×';x.onclick=()=>{if(confirm(t('del'))){S.lib=S.lib.filter(a=>a!==it);save('lib',S.lib);renderLib()}};d.append(m,x);b.appendChild(d)})}
+/* files */
+async function readPdf(f){const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';await ld(B+'pdf.min.js');await ld(B+'pdf.worker.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js';const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;const o=[];for(let i=1;i<=d.numPages;i++){const c=await(await d.getPage(i)).getTextContent();o.push(c.items.map(x=>x.str+(x.hasEOL?' ':'')).join('').replace(/\s+/g,' ').trim());busy(t('load')+' '+i+'/'+d.numPages)}return o.join('\n')}
+async function readDocx(f){await ld('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');return(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+async function readImg(f){busy(t('ocr'));await ld('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js');const r=await Tesseract.recognize(f,'eng+spa');return r.data.text.replace(/\n(?!\n)/g,' ')}
+async function onFile(f){if(!f)return;busy(t('load'));try{let x='';if(/\.pdf$/i.test(f.name)||f.type==='application/pdf')x=await readPdf(f);else if(/\.docx$/i.test(f.name))x=await readDocx(f);else if((f.type||'').startsWith('image/')||/\.(jpe?g|png|webp|heic)$/i.test(f.name))x=await readImg(f);else x=await f.text();if(/\.html?$/i.test(f.name))x=new DOMParser().parseFromString(x,'text/html').body.textContent;x=x.trim();if(x.length<5)throw new Error('scan');busy('');addDoc(f.name.replace(/\.[^.]+$/,''),x)}catch(e){busy('');alert(e.message==='scan'?t('scan'):t('err'))}$('#file').value=''}
+/* wiring */
+$('#go').onclick=()=>{const x=$('#ta').value.trim();if(!x)return;addDoc(x.slice(0,40).replace(/\s+/g,' ')||t('untitled'),x);$('#ta').value=''};
+$('#file').onchange=e=>onFile(e.target.files[0]);$('#cam').onchange=e=>onFile(e.target.files[0]);
+$('#pp').onclick=()=>S.playing?pause():play();$('#pv').onclick=()=>jump(-1);$('#nx').onclick=()=>jump(1);$('#back').onclick=closeDoc;
+$('#text').onclick=e=>{const s=e.target.closest('span[data-i]');if(s){S.i=+s.dataset.i;play()}};
+$('#lg').onclick=()=>{S.ui=S.ui==='en'?'es':'en';save('ui',S.ui);i18n()};
+$('#gear').onclick=()=>{$('#rate').value=S.set.rate;$('#size').value=S.set.size;$('#rv').textContent=S.set.rate+'×';$('#sv').textContent=S.set.size;fillVoices();$('#sheet').hidden=false};
+$('#close').onclick=()=>$('#sheet').hidden=true;
+$('#rate').oninput=e=>{S.set.rate=+e.target.value;$('#rv').textContent=S.set.rate+'×';save('set',S.set)};
+$('#rate').onchange=()=>{if(S.playing)speak()};
+$('#size').oninput=e=>{S.set.size=+e.target.value;$('#sv').textContent=S.set.size;$('#text').style.fontSize=S.set.size+'px';save('set',S.set)};
+['en','es'].forEach(l=>$('#v'+l).onchange=e=>{S.set['v'+l]=e.target.value;save('set',S.set);if(S.playing&&S.lang===l)speak()});
+document.addEventListener('visibilitychange',()=>{if(S.playing&&window.speechSynthesis&&!speechSynthesis.speaking)speak()});
+$('#test').onclick=()=>{if(!window.speechSynthesis)return alert(t('vhelp'));pause();const u=new SpeechSynthesisUtterance(S.ui==='es'?'Hola, esta es la voz seleccionada.':'Hello, this is the selected voice.');const v=pick(S.ui);if(v){u.voice=v;u.lang=v.lang}else u.lang=S.ui==='es'?'es-ES':'en-US';u.rate=+S.set.rate;speechSynthesis.cancel();speechSynthesis.speak(u)};
+let dp;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').hidden=false});
+$('#inst').onclick=async()=>{if(!dp)return;dp.prompt();await dp.userChoice;dp=null;$('#inst').hidden=true};
+addEventListener('appinstalled',()=>$('#inst').hidden=true);
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+i18n();
+</script></body></html>
